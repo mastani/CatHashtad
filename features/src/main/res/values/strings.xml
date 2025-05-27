@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scroll_to_wikipedia">Scroll to Wikipedia</string>
+    <string name="personality">Personality</string>
+    <string name="life_span">Life span</string>
+    <string name="alternate_names">Alternative names</string>
+    <string name="affection_level">Affection level</string>
+    <string name="temperament">Temperament</string>
+    <string name="child_friendly">Child friendly</string>
+    <string name="intelligence">Intelligence</string>
+    <string name="search_query">Search cat breeds …</string>
+    <string name="type_anything">Type to start your search</string>
+    <string name="favorite_list_is_empty">It\'s lonely here, Add a cat to your favorite list …</string>
+</resources>

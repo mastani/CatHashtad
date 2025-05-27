@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="error_view_message">There was an issue with your request, Please try again.</string>
+    <string name="try_again">Try Again</string>
+    <string name="dismiss">Dismiss</string>
+</resources>
