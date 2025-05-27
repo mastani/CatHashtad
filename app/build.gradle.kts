@@ -68,11 +68,11 @@ dependencies {
 
     implementation(libs.bundles.androidx.lifecycle)
     ksp(libs.androidx.lifecycle.compiler)
+    implementation(libs.androidx.compose.navigation)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.androidx.compose)
 
-    implementation(libs.bundles.navigation3)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

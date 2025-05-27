@@ -22,7 +22,7 @@ fun StatusBar(color: Color = Color.White, isDarkTheme: Boolean = false) {
 }
 
 fun setStatusBarColor(window: Window, color: Int) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) { // Android 15+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // Android 15+
         window.decorView.setOnApplyWindowInsetsListener { view, insets ->
             view.setBackgroundColor(color)
 

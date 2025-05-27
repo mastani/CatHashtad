@@ -26,8 +26,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -38,13 +41,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.entry
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
-import androidx.navigation3.ui.NavDisplay
-import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
-import app.mastani.cathashtad.common.TopLevelBackStack
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
 import app.mastani.cathashtad.designSystem.CustomizableTopBar
 import app.mastani.cathashtad.designSystem.SnackBarHost
 import app.mastani.cathashtad.designSystem.SnackbarMessage
@@ -52,10 +51,11 @@ import app.mastani.cathashtad.designSystem.SnackbarVisualsWithType
 import app.mastani.cathashtad.designSystem.StatusBar
 import app.mastani.cathashtad.designSystem.theme.CatHashtadTheme
 import app.mastani.cathashtad.features.R
-import app.mastani.cathashtad.features.breedDetail.screen.BreedDetailRoute
-import app.mastani.cathashtad.features.favorites.screen.FavoriteRoute
-import app.mastani.cathashtad.features.home.screen.HomeRoute
-import app.mastani.cathashtad.features.search.screen.SearchRoute
+import app.mastani.cathashtad.features.breedDetail.screen.navigation.breedDetailScreen
+import app.mastani.cathashtad.features.breedDetail.screen.navigation.navigateToBreedDetail
+import app.mastani.cathashtad.features.favorites.screen.navigation.favoritesScreen
+import app.mastani.cathashtad.features.home.screen.navigation.homeScreen
+import app.mastani.cathashtad.features.search.screen.navigation.searchScreen
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -87,7 +87,8 @@ fun CatHashtad(
     isDarkTheme: Boolean = isSystemInDarkTheme(),
     toggleDarkTheme: () -> Unit = {}
 ) {
-    val topLevelBackStack = remember { TopLevelBackStack(Screen.Home) }
+    var selectedBottomNavigationIndex by remember { mutableIntStateOf(0) }
+    val navController = rememberNavController()
 
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -108,8 +109,13 @@ fun CatHashtad(
     }
 
     val onNavigateToCatBreedDetail: (String) -> Unit = { breedId ->
+        navController.navigateToBreedDetail(breedId)
         onDismissSnackbar()
-        topLevelBackStack.add(Screen.BreedDetail(breedId))
+    }
+
+    var isOnTopLevel by remember { mutableStateOf(true) }
+    navController.addOnDestinationChangedListener { controller, destination, _ ->
+        isOnTopLevel = TOP_LEVEL_ROUTES.firstOrNull { it.route == destination.route } != null
     }
 
     CatHashtadTheme(
@@ -123,7 +129,7 @@ fun CatHashtad(
                 SnackBarHost(hostState = snackBarHostState)
             },
             topBar = {
-                if (topLevelBackStack.isOnTopLevel())
+                if (isOnTopLevel)
                     MainToolbar(
                         isDarkTheme = isDarkTheme,
                         toggleDarkTheme = toggleDarkTheme
@@ -132,13 +138,19 @@ fun CatHashtad(
                     SubToolbar(
                         title = "",
                         onBack = {
-                            topLevelBackStack.removeLast()
+                            navController.popBackStack()
                         }
                     )
             },
             bottomBar = {
-                if (topLevelBackStack.isOnTopLevel())
-                    BottomNavigationBar(topLevelBackStack)
+                if (isOnTopLevel)
+                    BottomNavigationBar(
+                        navController = navController,
+                        selectedBottomNavigationIndex = selectedBottomNavigationIndex,
+                        selectBottomNavigationIndex = {
+                            selectedBottomNavigationIndex = it
+                        }
+                    )
             }
         ) { innerPadding ->
             StatusBar(
@@ -146,66 +158,56 @@ fun CatHashtad(
                 isDarkTheme = isDarkTheme
             )
 
-            NavDisplay(
-                modifier = Modifier.padding(innerPadding),
-                entryDecorators = listOf(
-                    rememberSceneSetupNavEntryDecorator(),
-                    rememberSavedStateNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator()
-                ),
-                backStack = topLevelBackStack.backStack,
-                onBack = { topLevelBackStack.removeLast() },
-                entryProvider = entryProvider {
-                    entry<Screen.Home> {
-                        HomeRoute(
-                            onDisplayMessage = onDisplayMessage,
-                            onNavigateToCatBreedDetail = onNavigateToCatBreedDetail
-                        )
-                    }
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Home.route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                homeScreen(
+                    onDisplayMessage = onDisplayMessage,
+                    onNavigateToCatBreedDetail = onNavigateToCatBreedDetail
+                )
 
-                    entry<Screen.BreedDetail> {
-                        BreedDetailRoute(
-                            onDisplayMessage = onDisplayMessage,
-                            breedId = it.breedId
-                        )
-                    }
+                searchScreen(
+                    onDisplayMessage = onDisplayMessage,
+                    onNavigateToCatBreedDetail = onNavigateToCatBreedDetail
+                )
 
-                    entry(Screen.Favorites) {
-                        FavoriteRoute(
-                            onDisplayMessage = onDisplayMessage,
-                            onNavigateToCatBreedDetail = onNavigateToCatBreedDetail
-                        )
-                    }
+                favoritesScreen(
+                    onDisplayMessage = onDisplayMessage,
+                    onNavigateToCatBreedDetail = onNavigateToCatBreedDetail
+                )
 
-                    entry(Screen.Search) {
-                        SearchRoute(
-                            onDisplayMessage = onDisplayMessage,
-                            onNavigateToCatBreedDetail = onNavigateToCatBreedDetail
-                        )
-                    }
-                }
-            )
+                breedDetailScreen(
+                    onDisplayMessage = onDisplayMessage,
+                )
+            }
         }
     }
 }
 
 @Composable
 fun BottomNavigationBar(
-    topLevelBackStack: TopLevelBackStack
+    navController: NavController,
+    selectedBottomNavigationIndex: Int,
+    selectBottomNavigationIndex: (Int) -> Unit
 ) {
+
     NavigationBar {
-        TOP_LEVEL_ROUTES.forEach { topLevelRoute ->
-            val isSelected = topLevelRoute == topLevelBackStack.topLevelKey
+        TOP_LEVEL_ROUTES.forEachIndexed { index, screen ->
+            val isSelected = selectedBottomNavigationIndex == index
+
             NavigationBarItem(
                 selected = isSelected,
                 onClick = {
-                    topLevelBackStack.addTopLevel(topLevelRoute)
+                    selectBottomNavigationIndex(index)
+                    navController.navigate(screen.route)
                 },
                 label = {
-                    topLevelRoute.label?.let {
+                    screen.label?.let {
                         Text(
                             modifier = Modifier,
-                            text = topLevelRoute.label,
+                            text = screen.label,
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.Normal
                             )
@@ -213,7 +215,7 @@ fun BottomNavigationBar(
                     }
                 },
                 icon = {
-                    topLevelRoute.icon?.let {
+                    screen.icon?.let {
                         Icon(
                             imageVector = it,
                             contentDescription = null

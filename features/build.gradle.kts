@@ -49,12 +49,12 @@ dependencies {
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.bundles.androidx.compose)
+    implementation(libs.androidx.compose.navigation)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation)
 
-    implementation(libs.bundles.navigation3)
     implementation(libs.bundles.paging3)
     implementation(libs.webview)
 
