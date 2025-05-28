@@ -53,7 +53,9 @@ class CatBreedPagingMediator(
                 page = currentPage,
                 limit = state.config.pageSize
             )
-            val endOfPaginationReached = response.getOrNull()?.isEmpty() ?: true
+
+            val data = response.getOrThrow() // This will throw if network request failed
+            val endOfPaginationReached = data.isEmpty()
 
             val prevPage = if (currentPage == 0) null else currentPage - 1
             val nextPage = if (endOfPaginationReached) null else currentPage + 1

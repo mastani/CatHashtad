@@ -1,13 +1,18 @@
 package app.mastani.cathashtad.features.home.screen
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import app.mastani.cathashtad.designSystem.ErrorView
 import app.mastani.cathashtad.designSystem.SnackbarMessage
+import app.mastani.cathashtad.designSystem.loading.Loading
 import app.mastani.cathashtad.domain.repository.breed.model.CatBreedUiModel
 import app.mastani.cathashtad.features.common.collectInLaunchedEffect
 import app.mastani.cathashtad.features.common.use
@@ -36,22 +41,57 @@ fun HomeRoute(
 
     BreedList(
         breeds = catBreeds,
-        onNavigateToCatBreedDetail = onNavigateToCatBreedDetail
+        onNavigateToCatBreedDetail = onNavigateToCatBreedDetail,
+        onRetry = {
+            catBreeds.refresh()
+        }
     )
 }
 
 @Composable
 fun BreedList(
     breeds: LazyPagingItems<CatBreedUiModel>,
-    onNavigateToCatBreedDetail: (String) -> Unit
+    onNavigateToCatBreedDetail: (String) -> Unit,
+    onRetry: () -> Unit
 ) {
-    LazyColumn {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize()
+    ) {
         items(breeds.itemCount) { index ->
-            val breed = breeds[index] ?: return@items
-            CatBreed(
-                breed = breed,
-                onClick = onNavigateToCatBreedDetail
-            )
+            val breed = breeds[index]
+            breed?.let {
+                CatBreed(
+                    breed = it,
+                    onClick = onNavigateToCatBreedDetail
+                )
+            }
+        }
+
+        breeds.apply {
+            when {
+                // initial loading UI
+                loadState.refresh is LoadState.Loading -> {
+                    item {
+                        Loading()
+                    }
+                }
+
+                // load more UI
+                loadState.append is LoadState.Loading -> {
+                    item {
+                        Loading()
+                    }
+                }
+
+                loadState.refresh is LoadState.Error -> {
+                    item {
+                        ErrorView(
+                            modifier = Modifier.fillMaxSize(),
+                            onTryAgain = onRetry
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -65,6 +105,7 @@ fun BreedListPrev() {
 
     BreedList(
         breeds = fakeDataFlow.collectAsLazyPagingItems(),
-        onNavigateToCatBreedDetail = {}
+        onNavigateToCatBreedDetail = {},
+        onRetry = {}
     )
 }
